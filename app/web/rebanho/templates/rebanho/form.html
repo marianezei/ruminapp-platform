@@ -1,0 +1,11 @@
+{% extends "rebanho/base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block conteudo %}
+<h1>{{ titulo }}</h1>
+<p class="sub">&nbsp;</p>
+<form method="post" class="formulario">{% csrf_token %}
+  {% include "rebanho/_campos.html" %}
+  <button class="botao" type="submit">{{ botao }}</button>
+  {% if voltar %}<a class="botao secundario" href="{% url 'animal_detalhe' voltar %}">Cancelar</a>{% endif %}
+</form>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "rebanho/base.html" %}
+{% block titulo %}Animais{% endblock %}
+{% block classe_main %}largo{% endblock %}
+{% block conteudo %}
+<div class="secao" style="margin-top:0">
+  <div><h1>Animais</h1><p class="sub" style="margin:0">{{ animais|length }} animal(is)</p></div>
+  <a class="botao" href="{% url 'animal_novo' %}">Cadastrar animal</a>
+</div>
+
+<details class="caixa-filtros" {% if filtros_ativos %}open{% endif %}>
+  <summary>Filtros e busca{% if filtros_ativos %} <span class="etq cat">ativos</span>{% endif %}</summary>
+<form class="filtros" method="get">
+  <input type="search" name="q" value="{{ filtros.q }}" placeholder="Buscar por brinco ou nome" aria-label="Buscar">
+  <select name="categoria" aria-label="Categoria">
+    <option value="">Todas as categorias</option>
+    {% for v, l in categorias %}<option value="{{ v }}" {% if filtros.categoria == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <select name="situacao" aria-label="Situação reprodutiva">
+    <option value="">Qualquer situação</option>
+    {% for v, l in situacoes %}<option value="{{ v }}" {% if filtros.situacao == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <div class="faixa-dias">
+    <span class="rotulo-faixa">Dias no estado</span>
+    <input type="number" name="dias_min" value="{{ filtros.dias_min }}" min="0" placeholder="de" aria-label="Mínimo de dias no estado" inputmode="numeric">
+    <input type="number" name="dias_max" value="{{ filtros.dias_max }}" min="0" placeholder="até" aria-label="Máximo de dias no estado" inputmode="numeric">
+  </div>
+  <select name="lote" aria-label="Lote">
+    <option value="">Todos os lotes</option>
+    {% for l in lotes %}<option value="{{ l.pk }}" {% if filtros.lote == l.pk|stringformat:"s" %}selected{% endif %}>{{ l.nome }}</option>{% endfor %}
+  </select>
+  <select name="cor" aria-label="Cor do brinco">
+    <option value="">Qualquer cor de brinco</option>
+    {% for v, l in cores %}<option value="{{ v }}" {% if filtros.cor == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <label class="caixa"><input type="checkbox" name="baixados" value="1" {% if filtros.baixados %}checked{% endif %}> Incluir vendidos e mortos</label>
+  {% if filtros.ordem %}<input type="hidden" name="ordem" value="{{ filtros.ordem }}">{% endif %}
+  {% if filtros.dir %}<input type="hidden" name="dir" value="{{ filtros.dir }}">{% endif %}
+  <button class="botao secundario" type="submit">Filtrar</button>
+  {% if filtros_ativos %}<a class="botao secundario" href="{% url 'animal_lista' %}">Limpar</a>{% endif %}
+</form>
+</details>
+
+<form class="ordenar-celular" method="get">
+  {% for chave, valor in filtros.items %}{% if chave != 'ordem' and chave != 'dir' %}<input type="hidden" name="{{ chave }}" value="{{ valor }}">{% endif %}{% endfor %}
+  <label for="ordem-celular">Ordenar por</label>
+  <select id="ordem-celular" name="ordem" onchange="this.form.submit()">
+    {% for c in cabecalhos %}{% if not c.curta %}
+    <option value="{{ c.chave }}" {% if c.ativa %}selected{% endif %}>{{ c.titulo }}</option>
+    {% endif %}{% endfor %}
+  </select>
+  <button class="botao secundario" type="submit" name="dir" value="{% if filtros.dir == 'desc' %}asc{% else %}desc{% endif %}">
+    {% if filtros.dir == 'desc' %}↓ Maior primeiro{% else %}↑ Menor primeiro{% endif %}
+  </button>
+</form>
+
+<div class="barra-tabela">
+  <p class="sub dica-ordenar">Clique no título de uma coluna para ordenar por ela. Clique de novo para inverter.</p>
+  <label class="caixa mostrar-tudo"><input type="checkbox" id="mostrar-todas"> Mostrar todas as colunas</label>
+</div>
+
+<div class="tabela-caixa"><table class="lista-animais">
+  <thead><tr>
+    {% for c in cabecalhos %}
+    <th data-col="{{ c.chave }}" data-prioridade="{{ c.prioridade }}"
+        class="{% if c.numerica %}num {% endif %}{% if c.curta %}curta{% endif %}"
+        {% if c.ativa %}aria-sort="{% if c.sentido == 'desc' %}descending{% else %}ascending{% endif %}"{% endif %}>
+      <a class="ordenar{% if c.ativa %} ativa{% endif %}"
+         href="?{% if querystring %}{{ querystring }}&amp;{% endif %}ordem={{ c.chave }}&amp;dir={{ c.proximo }}">{{ c.titulo }}<span class="seta" aria-hidden="true">{{ c.seta }}</span></a>
+    </th>
+    {% endfor %}
+  </tr></thead>
+  <tbody>
+  {% for a in animais %}{% with s=a.status %}
+    <tr>
+      <td data-col="brinco" data-titulo="Brinco"><a class="brinco {{ a.classe_brinco }}" href="{% url 'animal_detalhe' a.pk %}">{{ a.brinco }}</a></td>
+      <td data-col="nome" data-titulo="Nome">{{ a.nome|default:"—" }}</td>
+      <td data-col="raca" data-titulo="Raça" class="curta">{{ a.get_raca_display }}</td>
+      <td data-col="lote" data-titulo="Lote">{{ a.lote|default:"—" }}</td>
+      <td data-col="categoria" data-titulo="Categoria"><span class="etq cat">{{ s.categoria_label }}</span></td>
+      <td data-col="situacao" data-titulo="Situação">{% if s.categoria != 'BAIXA' and s.categoria != 'BEZERRA' %}<span class="etq {{ s.situacao }}">{{ s.situacao_label }}</span>{% endif %}</td>
+      <td data-col="dias" data-titulo="Dias no estado" class="num" {% if s.inicio_situacao %}title="desde {{ s.inicio_situacao|date:'d/m/Y' }}"{% endif %}>{{ s.dias_situacao|default_if_none:"" }}</td>
+      <td data-col="peso" data-titulo="Peso" class="num">{% if a.peso_atual %}{{ a.peso_atual.peso|floatformat:0 }} kg{% endif %}</td>
+      <td data-col="partos" data-titulo="Partos" class="num curta">{{ s.n_partos }}</td>
+      <td data-col="del" data-titulo="DEL" class="num curta">{{ s.del_dias|default_if_none:"" }}</td>
+      <td data-col="parto" data-titulo="Último parto">{{ s.ultimo_parto|date:"d/m/Y"|default:"—" }}</td>
+      <td data-col="proxima" data-titulo="Próxima data">
+        {% if s.categoria == 'BAIXA' %}{{ s.motivo_baixa }} em {{ s.data_baixa|date:"d/m/Y" }}
+        {% elif s.situacao == 'PRENHE' and s.previsao_parto %}Parto previsto {{ s.previsao_parto|date:"d/m/Y" }}
+        {% elif s.situacao == 'INSEMINADA' %}Diagnóstico a partir de {{ s.data_diagnostico|date:"d/m/Y" }}
+        {% elif s.proximo_cio and s.apta_ia %}Cio previsto {{ s.proximo_cio|date:"d/m/Y" }}
+        {% elif s.liberacao_ia and not s.apta_ia and s.situacao == 'VAZIA' %}Liberada para IA em {{ s.liberacao_ia|date:"d/m/Y" }}
+        {% else %}—{% endif %}
+        {% if s.alertas %}<span class="alerta-txt" title="{{ s.alertas|join:'; ' }}"> ⚠</span>{% endif %}
+      </td>
+    </tr>
+  {% endwith %}{% empty %}
+    <tr><td colspan="12" class="vazio">Nenhum animal encontrado com esses filtros.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/*
+  Tabela dinâmica: em vez de espremer as colunas, a tabela esconde as menos
+  importantes até caber na largura disponível, e traz de volta quando sobra espaço.
+  A ordem de saída vem do atributo data-prioridade (maior sai primeiro), definido
+  em rebanho/colunas.py. Reage a redimensionar a janela e a abrir os filtros.
+*/
+(function () {
+  var caixa = document.querySelector('.tabela-caixa');
+  var tabela = document.querySelector('.lista-animais');
+  if (!caixa || !tabela) return;
+
+  var estilo = document.createElement('style');
+  document.head.appendChild(estilo);
+
+  // Da que sai primeiro para a que sai por último. Prioridade 1 nunca sai.
+  var ordemDeSaida = Array.from(tabela.querySelectorAll('thead th[data-col]'))
+    .map(function (th) {
+      return { col: th.dataset.col, prioridade: +th.dataset.prioridade };
+    })
+    .filter(function (c) { return c.prioridade > 1; })
+    .sort(function (a, b) { return b.prioridade - a.prioridade; })
+    .map(function (c) { return c.col; });
+
+  var mostrarTodas = document.getElementById('mostrar-todas');
+  var ocultas = [];
+
+  function aplicar() {
+    estilo.textContent = ocultas.length
+      ? '.lista-animais [data-col="' + ocultas.join('"], .lista-animais [data-col="') + '"] { display: none; }'
+      : '';
+  }
+
+  function ajustar() {
+    // No celular a tabela vira cartões empilhados: aí não há o que esconder.
+    if (window.innerWidth <= 860 || (mostrarTodas && mostrarTodas.checked)) {
+      ocultas = [];
+      aplicar();
+      return;
+    }
+    ocultas = [];
+    aplicar();
+    var i = 0;
+    // scrollWidth maior que clientWidth significa que a tabela não coube.
+    while (caixa.scrollWidth > caixa.clientWidth + 1 && i < ordemDeSaida.length) {
+      ocultas.push(ordemDeSaida[i++]);
+      aplicar();
+    }
+  }
+
+  var agendado;
+  function agendar() {
+    cancelAnimationFrame(agendado);
+    agendado = requestAnimationFrame(ajustar);
+  }
+
+  if (mostrarTodas) mostrarTodas.addEventListener('change', ajustar);
+  if (window.ResizeObserver) new ResizeObserver(agendar).observe(caixa);
+  window.addEventListener('resize', agendar);
+  ajustar();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,365 @@
+/* Paleta: pasto, papel de caderno de campo e o amarelo do brinco */
+/* Valores padrão (tema Pasto). O tema de cada usuário sobrescreve estas
+   variáveis em um <style> gerado por rebanho/tema.py. */
+:root {
+  --pasto: #2F5D3A;
+  --pasto-escuro: #24482D;
+  --texto-principal: #FFFFFF;
+  --papel: #F3F5F1;
+  --superficie: #FCFDFC;
+  --tinta: #1D1D1C;
+  --tinta-suave: #56635A;
+  --linha: #D5D7D3;
+  --link: #2F5D3A;
+  --brinco: #F2C230;
+  --brinco-borda: #C29B26;
+  --brinco-texto: #1C2620;
+  --atencao: #9A6700;
+  --problema: #A8322A;
+  --info: #2D5D8A;
+  --raio: 6px;
+  font-size: 15px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+a { color: var(--link); }
+a:hover { color: color-mix(in srgb, var(--link) 80%, var(--tinta)); }
+:focus-visible { outline: 3px solid var(--brinco); outline-offset: 2px; }
+
+/* ---------- Cabeçalho ---------- */
+.topo {
+  background: var(--pasto);
+  color: var(--texto-principal);
+}
+.topo-dentro {
+  max-width: 1280px; margin: 0 auto; padding: 0 24px;
+  display: flex; align-items: center; gap: 28px; height: 56px;
+}
+.marca {
+  font-weight: 700; font-size: 1.15rem; color: var(--texto-principal); text-decoration: none;
+  display: flex; align-items: center; gap: 10px;
+}
+/* Sem esta regra, o hover genérico de link (--link) vale aqui e some no fundo da barra. */
+.marca:hover { color: var(--texto-principal); opacity: .8; }
+.marca .emoji { font-size: 1.5rem; line-height: 1; }
+.topo nav { display: flex; gap: 4px; flex: 1; }
+.topo nav a {
+  color: color-mix(in srgb, var(--texto-principal) 82%, var(--pasto));
+  text-decoration: none; padding: 6px 12px; border-radius: var(--raio);
+}
+.topo nav a:hover, .topo nav a.ativo { background: var(--pasto-escuro); color: var(--texto-principal); }
+.topo .usuario { color: color-mix(in srgb, var(--texto-principal) 82%, var(--pasto)); font-size: .9rem; }
+.topo .usuario button {
+  background: none; border: none; color: inherit; cursor: pointer; font: inherit; text-decoration: underline;
+}
+
+main { max-width: 1280px; margin: 0 auto; padding: 28px 24px 64px; }
+/* A lista de animais aproveita telas largas para caber mais colunas. */
+main.largo { max-width: 1700px; }
+
+h1 { font-size: 1.7rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 0; }
+.sub { color: var(--tinta-suave); margin: 0 0 24px; }
+
+/* ---------- Brinco: o elemento marcante da interface ---------- */
+.brinco {
+  position: relative;
+  display: inline-flex; justify-content: center; align-items: flex-end;
+  min-width: 3.4em; padding: 11px 7px 3px;
+  background: var(--brinco);
+  border: 1px solid var(--brinco-borda);
+  border-radius: 48% 48% 5px 5px / 34% 34% 5px 5px;
+  color: var(--brinco-texto); font-weight: 700; text-decoration: none; line-height: 1.1;
+}
+.brinco::before {
+  content: ""; position: absolute; top: 3px; left: 50%;
+  width: 6px; height: 6px; margin-left: -3px; border-radius: 50%;
+  background: var(--papel); box-shadow: inset 0 0 0 1px var(--brinco-borda);
+}
+a.brinco:hover { background: color-mix(in srgb, var(--brinco) 82%, #FFFFFF); color: var(--brinco-texto); }
+.brinco.mini { font-size: .78rem; min-width: 2.8em; padding: 9px 5px 2px; }
+.brinco.grande { font-size: 1.9rem; min-width: 3.2em; padding: 22px 14px 6px; }
+.brinco.grande::before { width: 12px; height: 12px; margin-left: -6px; top: 6px; }
+
+/* ---------- Faixa de números do rebanho ---------- */
+.faixa {
+  display: flex; flex-wrap: wrap; background: var(--superficie);
+  border: 1px solid var(--linha); border-radius: var(--raio); margin-bottom: 28px;
+}
+.faixa div { padding: 12px 20px; border-right: 1px solid var(--linha); }
+.faixa div:last-child { border-right: none; }
+.faixa strong { display: block; font-size: 1.35rem; }
+.faixa span { color: var(--tinta-suave); font-size: .85rem; }
+
+/* ---------- Quadros de ação ---------- */
+.quadros {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px;
+  margin-bottom: 32px;
+}
+.quadro {
+  background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio);
+  border-top: 4px solid var(--pasto); display: flex; flex-direction: column;
+}
+.quadro.atencao { border-top-color: var(--atencao); }
+.quadro.info { border-top-color: var(--info); }
+.quadro.problema { border-top-color: var(--problema); }
+.quadro header { padding: 14px 16px 6px; display: flex; justify-content: space-between; align-items: baseline; }
+.quadro .contagem { font-weight: 700; font-size: 1.25rem; }
+.quadro .explica { padding: 0 16px 10px; margin: 0; color: var(--tinta-suave); font-size: .88rem; }
+.quadro ul { list-style: none; margin: 0; padding: 0 8px 8px; }
+.quadro li {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+  padding: 7px 8px; border-top: 1px solid var(--linha);
+}
+.quadro li .nome { font-weight: 600; }
+.quadro li .detalhe { display: block; color: var(--tinta-suave); font-size: .85rem; font-weight: 400; }
+.quadro li .data { font-weight: 600; white-space: nowrap; }
+.quadro li .data.hoje { color: var(--problema); }
+.vazio { padding: 10px 16px 16px; color: var(--tinta-suave); margin: 0; }
+
+/* ---------- Tabelas ---------- */
+.tabela-caixa { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--linha); vertical-align: middle; }
+th { font-size: .85rem; color: var(--tinta-suave); font-weight: 600; background: color-mix(in srgb, var(--superficie) 94%, var(--tinta)); }
+tr:last-child td { border-bottom: none; }
+td.num, th.num { text-align: right; }
+.secao { margin: 32px 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+
+/* ---------- Etiquetas de situação ---------- */
+.etq {
+  display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .82rem; font-weight: 600;
+  border: 1px solid currentColor; white-space: nowrap;
+}
+.etq.PRENHE { color: var(--link); background: color-mix(in srgb, var(--link) 12%, var(--superficie)); }
+.etq.INSEMINADA { color: var(--info); background: color-mix(in srgb, var(--info) 12%, var(--superficie)); }
+.etq.VAZIA { color: var(--atencao); background: color-mix(in srgb, var(--atencao) 12%, var(--superficie)); }
+.etq.cat { color: var(--tinta-suave); background: var(--papel); }
+.alerta-txt { color: var(--problema); }
+
+/* ---------- Ficha do animal ---------- */
+.ficha-topo { display: flex; gap: 24px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+.ficha-topo h1 { margin: 0; }
+.ficha-topo .acoes { margin-left: auto; display: flex; gap: 8px; }
+.colunas { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .colunas { grid-template-columns: 1fr; } }
+.cartao { background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio); padding: 18px; }
+.cartao h2 { margin-bottom: 12px; }
+dl.dados { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; }
+dl.dados dt { color: var(--tinta-suave); }
+dl.dados dd { margin: 0; font-weight: 600; }
+.proximos { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--linha); }
+.alertas { margin: 0 0 20px; padding: 12px 16px; border-left: 4px solid var(--problema); background: color-mix(in srgb, var(--problema) 10%, var(--superficie)); border-radius: var(--raio); }
+.alertas p { margin: 2px 0; }
+
+/* ---------- Formulários ---------- */
+.formulario { max-width: 640px; }
+.formulario .campo { margin-bottom: 14px; }
+.formulario label, .rapido label { display: block; font-weight: 600; margin-bottom: 4px; font-size: .92rem; }
+input, select, textarea {
+  width: 100%; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--tinta) 30%, var(--superficie));
+  border-radius: var(--raio); font: inherit; background: var(--superficie); color: var(--tinta);
+}
+input[type=checkbox] { width: auto; }
+.ajuda { color: var(--tinta-suave); font-size: .82rem; margin-top: 3px; }
+.erro { color: var(--problema); font-size: .88rem; margin-top: 3px; }
+.erros-gerais { color: var(--problema); margin-bottom: 14px; }
+.rapido { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 12px; }
+.rapido .inteiro { grid-column: 1 / -1; }
+
+.botao {
+  display: inline-block; padding: 8px 16px; border-radius: var(--raio); border: 1px solid var(--pasto);
+  background: var(--pasto); color: var(--texto-principal); font: inherit; font-weight: 600; cursor: pointer;
+  text-decoration: none;
+}
+.botao:hover { background: var(--pasto-escuro); color: var(--texto-principal); }
+.botao.secundario { background: var(--superficie); color: var(--link); border-color: var(--link); }
+.botao.secundario:hover { background: color-mix(in srgb, var(--link) 10%, var(--superficie)); color: var(--link); }
+.link-excluir { background: none; border: none; color: var(--problema); cursor: pointer; font: inherit; font-size: .85rem; padding: 0; }
+
+.filtros { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: end; }
+.filtros > * { width: auto; }
+.filtros input[type=search] { min-width: 270px; }
+
+/* ---------- Mensagens ---------- */
+.mensagens { list-style: none; padding: 0; margin: 0 0 20px; }
+.mensagens li {
+  padding: 10px 14px; border-radius: var(--raio); margin-bottom: 6px;
+  background: color-mix(in srgb, var(--link) 10%, var(--superficie));
+  border: 1px solid color-mix(in srgb, var(--link) 30%, var(--superficie));
+}
+.mensagens li.error {
+  background: color-mix(in srgb, var(--problema) 10%, var(--superficie));
+  border-color: color-mix(in srgb, var(--problema) 30%, var(--superficie)); color: var(--problema);
+}
+
+/* ---------- Login ---------- */
+.login { max-width: 360px; margin: 10vh auto; }
+.login .cartao { padding: 28px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------- Aparência ---------- */
+.temas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 28px; }
+.tema-opcao {
+  display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; text-align: left;
+  border: 2px solid var(--linha); border-radius: var(--raio); background: var(--superficie);
+  color: var(--tinta); font: inherit; cursor: pointer;
+}
+.tema-opcao[aria-pressed=true] { border-color: var(--link); box-shadow: 0 0 0 2px color-mix(in srgb, var(--link) 25%, transparent); }
+.tema-opcao .amostra-topo { height: 18px; }
+.tema-opcao .amostra-corpo { padding: 12px 10px 10px; display: flex; align-items: center; gap: 10px; }
+.tema-opcao .brinco { pointer-events: none; }
+.tema-opcao strong { font-weight: 600; }
+
+.cores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+@media (max-width: 800px) { .cores { grid-template-columns: 1fr; } }
+.cor-campo label { display: block; font-weight: 600; margin-bottom: 6px; }
+.cor-campo .linha-cor { display: flex; gap: 8px; align-items: center; }
+.cor-campo input[type=color] { width: 52px; height: 40px; padding: 2px; cursor: pointer; }
+.cor-campo input[type=text] { width: 110px; font-family: ui-monospace, Consolas, monospace; }
+
+.previa { display: grid; gap: 14px; margin: 8px 0 24px; }
+.previa .brincos { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.acoes-form { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Seletor de cor do brinco no cadastro do animal */
+.opcoes-cor { display: flex; flex-wrap: wrap; gap: 8px; }
+.opcoes-cor label {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 400; font-size: .82rem;
+  padding: 6px 8px; border: 2px solid transparent; border-radius: var(--raio); cursor: pointer; margin: 0;
+}
+.opcoes-cor input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.opcoes-cor label:has(input:checked) { border-color: var(--link); background: color-mix(in srgb, var(--link) 8%, var(--superficie)); }
+.opcoes-cor label:has(input:focus-visible) { outline: 3px solid var(--brinco); outline-offset: 2px; }
+
+/* ---------- Ordenação por coluna ---------- */
+th { padding: 0; }
+th a.ordenar {
+  display: flex; align-items: center; gap: 4px; padding: 9px 12px;
+  color: inherit; text-decoration: none; font-weight: 600; white-space: nowrap;
+}
+th.num a.ordenar { justify-content: flex-end; }
+th a.ordenar:hover { color: var(--link); background: color-mix(in srgb, var(--link) 8%, transparent); }
+th a.ordenar.ativa { color: var(--link); }
+th .seta { font-size: .9em; }
+.dica-ordenar { margin: 0; font-size: .85rem; }
+.barra-tabela {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin: 0 0 10px;
+}
+.mostrar-tudo { display: flex; gap: 6px; align-items: center; font-size: .85rem; white-space: nowrap; }
+
+/* A última coluna é a mais longa: garante espaço para a frase inteira numa linha só.
+   Se a janela for estreita demais, a tabela rola na horizontal em vez de espremer. */
+/* Largura mínima das colunas de texto: abaixo disso a coluna está "espremida",
+   e é isso que faz o script esconder uma coluna menos importante. O texto pode
+   ocupar duas linhas, mas não é cortado nem quebrado em qualquer ponto. */
+.lista-animais td[data-col="proxima"], .lista-animais th[data-col="proxima"] { min-width: 11rem; }
+.lista-animais td[data-col="lote"] { min-width: 6rem; }
+.lista-animais td[data-col="nome"] { min-width: 5rem; }
+.lista-animais td[data-col="parto"] { white-space: nowrap; }
+
+/* ---------- Faixa de dias no filtro ---------- */
+.faixa-dias {
+  display: flex; align-items: center; gap: 6px; padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--tinta) 30%, var(--superficie));
+  border-radius: var(--raio); background: var(--superficie);
+}
+.faixa-dias .rotulo-faixa { font-size: .82rem; color: var(--tinta-suave); white-space: nowrap; }
+.faixa-dias input { width: 68px; border: none; padding: 4px 2px; background: transparent; }
+.faixa-dias input:focus-visible { outline-offset: 0; }
+.filtros label.caixa { display: flex; gap: 6px; align-items: center; font-weight: 400; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 860px) {
+  :root { font-size: 16px; }
+  .topo-dentro { height: auto; padding: 8px 14px; flex-wrap: wrap; gap: 8px 16px; }
+  .topo nav { order: 3; width: 100%; flex-wrap: wrap; gap: 2px; }
+  .topo nav a { padding: 7px 9px; font-size: .88rem; }
+  .marca { font-size: 1.05rem; }
+  .marca .emoji { font-size: 1.3rem; }
+  .topo .usuario { margin-left: auto; }
+  main { padding: 18px 14px 56px; }
+  h1 { font-size: 1.4rem; }
+
+  .faixa { flex-direction: row; flex-wrap: wrap; }
+  .faixa div { flex: 1 1 33%; border-right: none; border-bottom: 1px solid var(--linha); }
+
+  .quadros { grid-template-columns: 1fr; }
+  .colunas { grid-template-columns: 1fr; }
+  .rapido { grid-template-columns: 1fr; }
+  .filtros { flex-direction: column; align-items: stretch; }
+  .filtros > *, .filtros input[type=search] { width: 100%; min-width: 0; }
+  .faixa-dias input { flex: 1; width: auto; }
+  .acoes-form, .ficha-topo .acoes { width: 100%; }
+
+  /* Colunas secundárias só atrapalham numa tela estreita. */
+  .curta, .tabela-caixa td.curta, .tabela-caixa th.curta { display: none; }
+  .dica-ordenar { display: none; }
+
+  /* Cada linha da tabela vira um cartão empilhado, com o rótulo à esquerda. */
+  .tabela-caixa { border: none; background: transparent; overflow: visible; }
+  .tabela-caixa table, .tabela-caixa tbody, .tabela-caixa tr, .tabela-caixa td { display: block; width: auto; }
+  .tabela-caixa thead { display: none; }
+  .tabela-caixa tr {
+    background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio);
+    margin-bottom: 10px; padding: 6px 12px;
+  }
+  .tabela-caixa td {
+    border: none; padding: 5px 0; display: flex; gap: 12px; align-items: center;
+    justify-content: space-between; text-align: right;
+  }
+  .tabela-caixa td::before {
+    content: attr(data-titulo); color: var(--tinta-suave); font-size: .85rem;
+    text-align: left; flex: 0 0 auto;
+  }
+  .tabela-caixa td:empty, .tabela-caixa td:not([data-titulo]) { display: none; }
+  .tabela-caixa td[data-titulo="Brinco"] { border-bottom: 1px solid var(--linha); padding-bottom: 8px; }
+  .tabela-caixa td.vazio { display: block; text-align: center; }
+  .tabela-caixa td.vazio::before { content: none; }
+
+  .temas { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .cores { grid-template-columns: 1fr; }
+}
+
+/* Alvos de toque maiores em telas sensíveis ao toque. */
+@media (pointer: coarse) {
+  .botao, th a.ordenar { min-height: 44px; }
+  .botao { display: inline-flex; align-items: center; }
+  input, select { min-height: 44px; }
+  .link-excluir { padding: 8px 0; }
+}
+
+/* ---------- Filtros recolhíveis e ordenação no celular ---------- */
+.caixa-filtros > summary { display: none; }
+.ordenar-celular { display: none; }
+
+@media (max-width: 860px) {
+  /* Na tela estreita os filtros começam fechados, para a lista aparecer logo. */
+  .caixa-filtros > summary {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    padding: 12px 14px; margin-bottom: 12px; font-weight: 600;
+    background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio);
+  }
+  .caixa-filtros[open] > summary { margin-bottom: 8px; }
+  .caixa-filtros > summary::marker { color: var(--tinta-suave); }
+
+  /* Sem cabeçalho de tabela, a ordenação precisa de um controle próprio. */
+  .ordenar-celular {
+    display: grid; grid-template-columns: auto 1fr; gap: 8px 10px; align-items: center;
+    margin-bottom: 14px;
+  }
+  .ordenar-celular label { font-size: .85rem; color: var(--tinta-suave); }
+  .ordenar-celular button { grid-column: 1 / -1; }
+}

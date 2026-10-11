@@ -1,0 +1,80 @@
+controller:
+  type: daemonset
+  volumes:
+    extra:
+      - name: tmp
+        emptyDir: {}
+  priorityClassName: ${priority_class}
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "12345"
+
+alloy:
+  configMap:
+    create: false
+    name: ${config_map}
+    key: config.alloy
+  extraEnv:
+    - name: NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: LOKI_PUSH_URL
+      value: ${loki_push_url}
+    - name: TEMPO_OTLP_ENDPOINT
+      value: ${tempo_otlp_endpoint}
+    - name: JSON_LOG_NAMESPACES
+      value: "${json_log_namespaces}"
+  extraPorts:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+  resources:
+    requests: {cpu: 30m, memory: 96Mi}
+    limits: {memory: 384Mi}
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 473
+    runAsGroup: 473
+    capabilities:
+      drop: [ALL]
+    seccompProfile:
+      type: RuntimeDefault
+  storagePath: /tmp/alloy
+  mounts:
+    extra:
+      - name: tmp
+        mountPath: /tmp
+
+configReloader:
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 65534
+    capabilities:
+      drop: [ALL]
+    seccompProfile:
+      type: RuntimeDefault
+
+service:
+  internalTrafficPolicy: Local
+
+# The chart's default role can read secrets. Grant only what is needed to
+# discover pods, read logs and enrich spans with Kubernetes metadata.
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: [pods, pods/log, namespaces, nodes]
+      verbs: [get, list, watch]
+    - apiGroups: [apps]
+      resources: [replicasets, deployments, statefulsets, daemonsets]
+      verbs: [get, list, watch]

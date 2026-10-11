@@ -1,0 +1,11 @@
+{% extends "rebanho/base.html" %}
+{% block titulo %}Registrar evento{% endblock %}
+{% block conteudo %}
+<h1>Registrar evento</h1>
+<p class="sub">Parto, cio, inseminação, diagnóstico, secagem, venda ou morte. As listas do painel se atualizam na hora.</p>
+<form method="post" class="formulario" data-evento>{% csrf_token %}
+  {% include "rebanho/_campos.html" %}
+  <input type="hidden" name="proximo" value="{{ proximo }}">
+  <button class="botao" type="submit">Registrar evento</button>
+</form>
+{% endblock %}

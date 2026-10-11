@@ -1,0 +1,78 @@
+groups:
+  - name: ruminapp
+    rules:
+      - alert: RuminappReproducaoUnavailable
+        expr: sum by (namespace) (rate(ruminapp_reproducao_falhas_total[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: web
+        annotations:
+          summary: "web cannot reach the reproducao service"
+          description: "{{ $value | humanize }} failed calls/s from web to reproducao. Users are getting the 'unavailable' page."
+      - alert: RuminappHPAAtMaxReplicas
+        expr: |
+          kube_horizontalpodautoscaler_status_current_replicas{namespace="ruminapp"}
+          >= on (namespace, horizontalpodautoscaler) kube_horizontalpodautoscaler_spec_max_replicas{namespace="ruminapp"}
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HPA {{ $labels.horizontalpodautoscaler }} has been at max replicas for 15 minutes"
+          description: "Load may exceed what the current limit can handle. Review the HPA maximum or the CPU requests."
+      - alert: RuminappPostgresDown
+        expr: pg_up{namespace="ruminapp"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgres
+        annotations:
+          summary: "postgres-exporter cannot connect to Postgres"
+          description: "The RuminApp database is unreachable; the application stops working."
+      - alert: RuminappPostgresConnectionsHigh
+        expr: |
+          sum by (namespace) (pg_stat_activity_count{namespace="ruminapp"})
+          / on (namespace) max by (namespace) (pg_settings_max_connections{namespace="ruminapp"}) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "Postgres is using more than 80% of its connections"
+          description: "{{ $value | humanizePercentage }} of max_connections in use."
+      - alert: RuminappNoTraffic
+        expr: sum by (namespace) (rate(http_server_request_duration_seconds_count{namespace="ruminapp", service="web"}[10m])) == 0
+        for: 15m
+        labels:
+          severity: warning
+          service: web
+        annotations:
+          summary: "web has received no requests for 15 minutes"
+          description: "Check the ingress, the load generator and the network policies."
+
+  - name: observability
+    rules:
+      - alert: LokiDiscardingLogs
+        expr: sum by (namespace) (rate(loki_discarded_samples_total[5m])) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Loki is discarding log lines"
+          description: "{{ $value | humanize }} lines/s discarded. See the reason label on loki_discarded_samples_total."
+      - alert: AlloyTraceExportFailing
+        expr: sum by (namespace) (rate(otelcol_exporter_send_failed_spans_total[5m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alloy cannot export spans to Tempo"
+          description: "{{ $value | humanize }} spans/s failing in the OTLP exporter."
+      - alert: PrometheusRemoteWriteRejected
+        expr: sum by (namespace) (rate(prometheus_http_requests_total{handler="/api/v1/write", code=~"5.."}[5m])) > 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prometheus is rejecting remote write (Tempo or k6 metrics)"
+          description: "Service graph and span metrics panels may have gaps."

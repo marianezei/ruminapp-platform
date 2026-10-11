@@ -1,0 +1,54 @@
+groups:
+  - name: cost
+    interval: 1m
+    rules:
+      - record: cost:cpu_core_hourly:price
+        expr: vector(${cpu_hourly})
+      - record: cost:memory_gib_hourly:price
+        expr: vector(${memory_gib_hourly})
+      - record: namespace:cpu_requests_cores:sum
+        expr: sum by (namespace) (kube_pod_container_resource_requests{resource="cpu"} * on (namespace, pod) group_left() max by (namespace, pod) (kube_pod_status_phase{phase="Running"} == 1))
+      - record: namespace:memory_requests_gib:sum
+        expr: sum by (namespace) (kube_pod_container_resource_requests{resource="memory"} * on (namespace, pod) group_left() max by (namespace, pod) (kube_pod_status_phase{phase="Running"} == 1)) / 1024^3
+      - record: namespace:cpu_usage_cores:sum
+        expr: sum by (namespace) (rate(container_cpu_usage_seconds_total{container!="", image!=""}[5m]))
+      - record: namespace:memory_usage_gib:sum
+        expr: sum by (namespace) (container_memory_working_set_bytes{container!="", image!=""}) / 1024^3
+      - record: namespace:storage_requests_gib:sum
+        expr: sum by (namespace) (kube_persistentvolumeclaim_resource_requests_storage_bytes) / 1024^3
+
+      # Allocated cost is the larger of reserved (requests) and used, as OpenCost does.
+      - record: namespace:cost_cpu_hourly:sum
+        expr: |
+          (
+            namespace:cpu_requests_cores:sum > namespace:cpu_usage_cores:sum
+            or namespace:cpu_usage_cores:sum
+          ) * ${cpu_hourly}
+      - record: namespace:cost_memory_hourly:sum
+        expr: |
+          (
+            namespace:memory_requests_gib:sum > namespace:memory_usage_gib:sum
+            or namespace:memory_usage_gib:sum
+          ) * ${memory_gib_hourly}
+      - record: namespace:cost_storage_hourly:sum
+        expr: namespace:storage_requests_gib:sum * ${storage_gib_hourly}
+      - record: namespace:cost_hourly:sum
+        expr: |
+          sum by (namespace) (
+            namespace:cost_cpu_hourly:sum
+            or namespace:cost_memory_hourly:sum
+            or namespace:cost_storage_hourly:sum
+          )
+      - record: namespace:cost_idle_hourly:sum
+        expr: |
+          clamp_min(namespace:cpu_requests_cores:sum - namespace:cpu_usage_cores:sum, 0) * ${cpu_hourly}
+          + on (namespace)
+          clamp_min(namespace:memory_requests_gib:sum - namespace:memory_usage_gib:sum, 0) * ${memory_gib_hourly}
+      - record: namespace:cpu_efficiency:ratio
+        expr: namespace:cpu_usage_cores:sum / namespace:cpu_requests_cores:sum
+      - record: namespace:memory_efficiency:ratio
+        expr: namespace:memory_usage_gib:sum / namespace:memory_requests_gib:sum
+      - record: cluster:cost_capacity_hourly:sum
+        expr: |
+          sum(kube_node_status_capacity{resource="cpu"}) * ${cpu_hourly}
+          + sum(kube_node_status_capacity{resource="memory"}) / 1024^3 * ${memory_gib_hourly}

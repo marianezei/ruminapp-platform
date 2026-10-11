@@ -1,0 +1,77 @@
+{% extends "rebanho/base.html" %}
+{% block titulo %}Painel do dia{% endblock %}
+{% block conteudo %}
+<h1>{{ hoje|date:"l, j \d\e F"|lower|capfirst }}</h1>
+<p class="sub">O que precisa ser feito hoje no rebanho, calculado a partir dos eventos registrados.</p>
+
+<section class="faixa" aria-label="Resumo do rebanho">
+  <div><strong>{{ ind.lactacao }}</strong><span>em lactação</span></div>
+  <div><strong>{{ ind.secas }}</strong><span>secas</span></div>
+  <div><strong>{{ ind.novilhas }}</strong><span>novilhas</span></div>
+  <div><strong>{{ ind.bezerras }}</strong><span>bezerras</span></div>
+  <div><strong>{{ ind.pct_prenhes|default_if_none:"–" }}{% if ind.pct_prenhes is not None %}%{% endif %}</strong><span>das vacas prenhes</span></div>
+  <div><strong>{{ ind.del_medio|default_if_none:"–" }}</strong><span>DEL médio</span></div>
+  <div><strong>{{ ind.iep_medio_meses|default_if_none:"–" }}</strong><span>intervalo entre partos (meses)</span></div>
+  <div><strong>{{ ind.servicos_por_concepcao|default_if_none:"–" }}</strong><span>IAs por prenhez</span></div>
+</section>
+
+<div class="quadros">
+{% for lista in listas_acao %}
+  <section class="quadro {{ lista.tom }}">
+    <header><h2>{{ lista.titulo }}</h2><span class="contagem">{{ lista.itens|length }}</span></header>
+    <p class="explica">{{ lista.descricao }}</p>
+    {% if lista.itens %}
+    <ul>
+      {% for item in lista.itens %}
+      <li>
+        <a class="brinco {{ item.animal.classe_brinco }}" href="{% url 'animal_detalhe' item.animal.pk %}">{{ item.animal.brinco }}</a>
+        <span class="nome">{{ item.animal.nome|default:"—" }}<span class="detalhe">{{ item.detalhe }}</span></span>
+        <span class="data {% if item.data and item.data <= hoje %}hoje{% endif %}">{{ item.data|date:"d/m" }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="vazio">Nenhum animal nesta lista hoje.</p>
+    {% endif %}
+  </section>
+{% endfor %}
+</div>
+
+<div class="secao"><h2>{{ problemas.titulo }} ({{ problemas.itens|length }})</h2></div>
+{% if problemas.itens %}
+<div class="tabela-caixa"><table>
+  <thead><tr><th>Brinco</th><th>Nome</th><th>Situação</th><th>Problema</th><th></th></tr></thead>
+  <tbody>
+  {% for item in problemas.itens %}
+    <tr>
+      <td data-titulo="Brinco"><a class="brinco {{ item.animal.classe_brinco }}" href="{% url 'animal_detalhe' item.animal.pk %}">{{ item.animal.brinco }}</a></td>
+      <td data-titulo="Nome">{{ item.animal.nome }}</td>
+      <td data-titulo="Situação"><span class="etq cat">{{ item.status.categoria_label }}</span> <span class="etq {{ item.status.situacao }}">{{ item.status.situacao_label }}</span></td>
+      <td data-titulo="Problema" class="alerta-txt">{{ item.detalhe }}</td>
+      <td><a href="{% url 'animal_detalhe' item.animal.pk %}">Ver ficha</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<p class="vazio">Nenhum problema reprodutivo encontrado.</p>{% endif %}
+
+<div class="secao"><h2>{{ aptas.titulo }} ({{ aptas.itens|length }})</h2><span class="sub" style="margin:0">{{ aptas.descricao }}</span></div>
+{% if aptas.itens %}
+<div class="tabela-caixa"><table>
+  <thead><tr><th>Brinco</th><th>Nome</th><th>Categoria</th><th>Dias</th><th>Último cio</th><th>Próximo cio previsto</th><th></th></tr></thead>
+  <tbody>
+  {% for item in aptas.itens %}
+    <tr>
+      <td data-titulo="Brinco"><a class="brinco {{ item.animal.classe_brinco }}" href="{% url 'animal_detalhe' item.animal.pk %}">{{ item.animal.brinco }}</a></td>
+      <td data-titulo="Nome">{{ item.animal.nome }}</td>
+      <td data-titulo="Categoria">{{ item.status.categoria_label }}</td>
+      <td data-titulo="Dias">{{ item.detalhe }}</td>
+      <td data-titulo="Último cio">{{ item.status.ultimo_cio|date:"d/m/Y"|default:"não registrado" }}</td>
+      <td data-titulo="Próximo cio">{% if item.status.proximo_cio %}{{ item.status.proximo_cio|date:"d/m/Y" }}{% if item.status.cio_estimado %} (estimado){% endif %}{% else %}—{% endif %}</td>
+      <td><a href="{% url 'evento_novo' %}?animal={{ item.animal.pk }}&tipo=IA&proximo=painel">Registrar IA</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<p class="vazio">Nenhuma vaca vazia liberada no momento.</p>{% endif %}
+{% endblock %}

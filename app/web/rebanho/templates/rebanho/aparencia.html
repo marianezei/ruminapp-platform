@@ -1,0 +1,133 @@
+{% extends "rebanho/base.html" %}
+{% block titulo %}Aparência{% endblock %}
+{% block conteudo %}
+<h1>Aparência</h1>
+<p class="sub">As cores valem só para o seu usuário. A tela inteira muda enquanto você escolhe; nada é salvo até você clicar em Salvar aparência.</p>
+
+<h2 style="margin-bottom:12px">Temas prontos</h2>
+<div class="temas" role="group" aria-label="Temas prontos">
+  {% for t in temas %}
+  <button type="button" class="tema-opcao" data-principal="{{ t.principal }}" data-brinco="{{ t.brinco }}"
+          data-fundo="{{ t.fundo }}" aria-pressed="{% if t.chave == tema_atual %}true{% else %}false{% endif %}">
+    <span class="amostra-topo" style="background:{{ t.principal }}"></span>
+    <span class="amostra-corpo" style="background:{{ t.fundo }};color:{{ t.texto_fundo }}">
+      <span class="brinco mini" style="--brinco:{{ t.brinco }};--brinco-texto:{{ t.texto_brinco }};--brinco-borda:{{ t.brinco }}">101</span>
+      <strong>{{ t.nome }}</strong>
+    </span>
+  </button>
+  {% endfor %}
+</div>
+
+<form method="post" id="form-aparencia">{% csrf_token %}
+  <h2 style="margin-bottom:12px">Cores</h2>
+  {% if form.errors %}<div class="erros-gerais">Confira as cores: use o formato #RRGGBB.</div>{% endif %}
+  <div class="cores">
+    <div class="cor-campo">
+      <label for="txt-principal">Cor principal</label>
+      <div class="linha-cor">
+        <input type="color" data-par="txt-principal" value="{{ form.cor_principal.value }}" aria-label="Escolher cor principal">
+        <input type="text" id="txt-principal" name="cor_principal" value="{{ form.cor_principal.value }}" pattern="#[0-9A-Fa-f]{6}" required>
+      </div>
+      <div class="ajuda">Barra do topo, botões e links.</div>
+    </div>
+    <div class="cor-campo">
+      <label for="txt-brinco">Cor padrão dos brincos</label>
+      <div class="linha-cor">
+        <input type="color" data-par="txt-brinco" value="{{ form.cor_brinco.value }}" aria-label="Escolher cor dos brincos">
+        <input type="text" id="txt-brinco" name="cor_brinco" value="{{ form.cor_brinco.value }}" pattern="#[0-9A-Fa-f]{6}" required>
+      </div>
+      <div class="ajuda">Usada nos animais sem cor de brinco própria.</div>
+    </div>
+    <div class="cor-campo">
+      <label for="txt-fundo">Cor de fundo</label>
+      <div class="linha-cor">
+        <input type="color" data-par="txt-fundo" value="{{ form.cor_fundo.value }}" aria-label="Escolher cor de fundo">
+        <input type="text" id="txt-fundo" name="cor_fundo" value="{{ form.cor_fundo.value }}" pattern="#[0-9A-Fa-f]{6}" required>
+      </div>
+      <div class="ajuda">Um fundo escuro ativa o modo noturno.</div>
+    </div>
+  </div>
+
+  <h2>Prévia</h2>
+  <div class="previa">
+    <div class="brincos">
+      <span class="brinco" title="Cor padrão">1000</span>
+      {% for codigo, rotulo, _ in cores_brinco %}<span class="brinco cor-{{ codigo }}" title="{{ rotulo }}">10{{ forloop.counter|stringformat:"02d" }}</span>{% endfor %}
+    </div>
+    <p style="margin:0">
+      <span class="etq PRENHE">Prenhe</span> <span class="etq INSEMINADA">Inseminada</span>
+      <span class="etq VAZIA">Vazia</span> <span class="etq cat">Em lactação</span>
+      <span class="alerta-txt">Repetidora: 3 inseminações sem prenhez</span>
+    </p>
+    <section class="quadro" style="max-width:420px">
+      <header><h2>Observar cio</h2><span class="contagem">1</span></header>
+      <ul><li><span class="brinco">1060</span><span class="nome">Fumaça<span class="detalhe">último cio 19/08</span></span><span class="data">11/09</span></li></ul>
+    </section>
+  </div>
+
+  <div class="acoes-form">
+    <button class="botao" type="submit">Salvar aparência</button>
+    <a class="botao secundario" href="{% url 'aparencia' %}">Descartar alterações</a>
+  </div>
+</form>
+
+<form method="post" style="margin-top:16px">{% csrf_token %}
+  <button class="link-excluir" type="submit" name="restaurar" value="1">Voltar ao tema padrão</button>
+</form>
+
+<script>
+(function () {
+  var estilo = document.getElementById('tema');
+  var campos = {
+    principal: document.getElementById('txt-principal'),
+    brinco: document.getElementById('txt-brinco'),
+    fundo: document.getElementById('txt-fundo')
+  };
+  var hex = /^#[0-9A-Fa-f]{6}$/;
+  var espera;
+
+  function atualizarPrevia() {
+    clearTimeout(espera);
+    espera = setTimeout(function () {
+      var p = new URLSearchParams();
+      for (var k in campos) {
+        if (!hex.test(campos[k].value)) return;
+        p.set(k, campos[k].value);
+      }
+      fetch("{% url 'aparencia_previa' %}?" + p.toString())
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (css) { if (css) estilo.textContent = css; });
+      marcarTema();
+    }, 120);
+  }
+
+  function marcarTema() {
+    document.querySelectorAll('.tema-opcao').forEach(function (b) {
+      var igual = ['principal', 'brinco', 'fundo'].every(function (k) {
+        return b.dataset[k].toUpperCase() === campos[k].value.toUpperCase();
+      });
+      b.setAttribute('aria-pressed', igual ? 'true' : 'false');
+    });
+  }
+
+  // Seletor de cor e campo de texto andam juntos
+  document.querySelectorAll('input[type=color][data-par]').forEach(function (cor) {
+    var texto = document.getElementById(cor.dataset.par);
+    cor.addEventListener('input', function () { texto.value = cor.value.toUpperCase(); atualizarPrevia(); });
+    texto.addEventListener('input', function () {
+      if (hex.test(texto.value)) { cor.value = texto.value; atualizarPrevia(); }
+    });
+  });
+
+  document.querySelectorAll('.tema-opcao').forEach(function (botao) {
+    botao.addEventListener('click', function () {
+      for (var k in campos) {
+        campos[k].value = botao.dataset[k];
+        document.querySelector('[data-par=' + campos[k].id + ']').value = botao.dataset[k];
+      }
+      atualizarPrevia();
+    });
+  });
+})();
+</script>
+{% endblock %}

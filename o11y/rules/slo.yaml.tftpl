@@ -1,0 +1,251 @@
+groups:
+  - name: slo-sli
+    interval: 30s
+    rules:
+      - record: service:slo_availability_error_ratio:rate5m
+        expr: |
+          (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}", http_response_status_code=~"5.."}[5m]))
+            or 0 * sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[5m]))
+          )
+          /
+          sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[5m]))
+      - record: service:slo_latency_error_ratio:rate5m
+        expr: |
+          1 - (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_bucket{namespace=~"${namespaces}", le="${latency_threshold}"}[5m]))
+            /
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[5m]))
+          )
+      - record: service:slo_availability_error_ratio:rate30m
+        expr: |
+          (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}", http_response_status_code=~"5.."}[30m]))
+            or 0 * sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[30m]))
+          )
+          /
+          sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[30m]))
+      - record: service:slo_latency_error_ratio:rate30m
+        expr: |
+          1 - (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_bucket{namespace=~"${namespaces}", le="${latency_threshold}"}[30m]))
+            /
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[30m]))
+          )
+      - record: service:slo_availability_error_ratio:rate1h
+        expr: |
+          (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}", http_response_status_code=~"5.."}[1h]))
+            or 0 * sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[1h]))
+          )
+          /
+          sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[1h]))
+      - record: service:slo_latency_error_ratio:rate1h
+        expr: |
+          1 - (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_bucket{namespace=~"${namespaces}", le="${latency_threshold}"}[1h]))
+            /
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[1h]))
+          )
+      - record: service:slo_availability_error_ratio:rate2h
+        expr: |
+          (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}", http_response_status_code=~"5.."}[2h]))
+            or 0 * sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[2h]))
+          )
+          /
+          sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[2h]))
+      - record: service:slo_latency_error_ratio:rate2h
+        expr: |
+          1 - (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_bucket{namespace=~"${namespaces}", le="${latency_threshold}"}[2h]))
+            /
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[2h]))
+          )
+      - record: service:slo_availability_error_ratio:rate6h
+        expr: |
+          (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}", http_response_status_code=~"5.."}[6h]))
+            or 0 * sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[6h]))
+          )
+          /
+          sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[6h]))
+      - record: service:slo_latency_error_ratio:rate6h
+        expr: |
+          1 - (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_bucket{namespace=~"${namespaces}", le="${latency_threshold}"}[6h]))
+            /
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[6h]))
+          )
+      - record: service:slo_availability_error_ratio:rate1d
+        expr: |
+          (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}", http_response_status_code=~"5.."}[1d]))
+            or 0 * sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[1d]))
+          )
+          /
+          sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[1d]))
+      - record: service:slo_latency_error_ratio:rate1d
+        expr: |
+          1 - (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_bucket{namespace=~"${namespaces}", le="${latency_threshold}"}[1d]))
+            /
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[1d]))
+          )
+      - record: service:slo_availability_error_ratio:rate3d
+        expr: |
+          (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}", http_response_status_code=~"5.."}[3d]))
+            or 0 * sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[3d]))
+          )
+          /
+          sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[3d]))
+      - record: service:slo_latency_error_ratio:rate3d
+        expr: |
+          1 - (
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_bucket{namespace=~"${namespaces}", le="${latency_threshold}"}[3d]))
+            /
+            sum by (namespace, service) (rate(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[3d]))
+          )
+  - name: slo-budget
+    interval: 5m
+    rules:
+      - record: service:slo_availability_error_ratio:window
+        expr: |
+          (
+            sum by (namespace, service) (increase(http_server_request_duration_seconds_count{namespace=~"${namespaces}", http_response_status_code=~"5.."}[${window}]))
+            or 0 * sum by (namespace, service) (increase(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[${window}]))
+          )
+          /
+          sum by (namespace, service) (increase(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[${window}]))
+      - record: service:slo_availability_error_budget_remaining:ratio
+        expr: 1 - (service:slo_availability_error_ratio:window / (1 - ${availability_target}))
+      - record: service:slo_availability_target:ratio
+        expr: |
+          ${availability_target} + 0 * count by (namespace, service) (service:slo_availability_error_ratio:window)
+      - record: service:slo_latency_error_ratio:window
+        expr: |
+          1 - (
+            sum by (namespace, service) (increase(http_server_request_duration_seconds_bucket{namespace=~"${namespaces}", le="${latency_threshold}"}[${window}]))
+            /
+            sum by (namespace, service) (increase(http_server_request_duration_seconds_count{namespace=~"${namespaces}"}[${window}]))
+          )
+      - record: service:slo_latency_error_budget_remaining:ratio
+        expr: 1 - (service:slo_latency_error_ratio:window / (1 - ${latency_target}))
+      - record: service:slo_latency_target:ratio
+        expr: |
+          ${latency_target} + 0 * count by (namespace, service) (service:slo_latency_error_ratio:window)
+  - name: slo-burn-rate
+    rules:
+      - alert: SLOAvailabilityBurnRateCritical
+        expr: |
+          service:slo_availability_error_ratio:rate1h > (14.4 * (1 - ${availability_target}))
+          and
+          service:slo_availability_error_ratio:rate5m > (14.4 * (1 - ${availability_target}))
+        for: 2m
+        labels:
+          severity: critical
+          slo: availability
+          window: "1h"
+        annotations:
+          summary: "{{ $labels.service }} is burning its availability error budget 14.4x faster than sustainable"
+          description: "Error ratio over 1h: {{ $value | humanizePercentage }}. At this pace the budget runs out before the end of the SLO window."
+          dashboard: "${grafana_url}/d/ruminapp-slo"
+      - alert: SLOAvailabilityBurnRateCritical
+        expr: |
+          service:slo_availability_error_ratio:rate6h > (6 * (1 - ${availability_target}))
+          and
+          service:slo_availability_error_ratio:rate30m > (6 * (1 - ${availability_target}))
+        for: 15m
+        labels:
+          severity: critical
+          slo: availability
+          window: "6h"
+        annotations:
+          summary: "{{ $labels.service }} is burning its availability error budget 6x faster than sustainable"
+          description: "Error ratio over 6h: {{ $value | humanizePercentage }}. At this pace the budget runs out before the end of the SLO window."
+          dashboard: "${grafana_url}/d/ruminapp-slo"
+      - alert: SLOAvailabilityBurnRateWarning
+        expr: |
+          service:slo_availability_error_ratio:rate1d > (3 * (1 - ${availability_target}))
+          and
+          service:slo_availability_error_ratio:rate2h > (3 * (1 - ${availability_target}))
+        for: 1h
+        labels:
+          severity: warning
+          slo: availability
+          window: "1d"
+        annotations:
+          summary: "{{ $labels.service }} is burning its availability error budget 3x faster than sustainable"
+          description: "Error ratio over 1d: {{ $value | humanizePercentage }}. At this pace the budget runs out before the end of the SLO window."
+          dashboard: "${grafana_url}/d/ruminapp-slo"
+      - alert: SLOAvailabilityBurnRateWarning
+        expr: |
+          service:slo_availability_error_ratio:rate3d > (1 * (1 - ${availability_target}))
+          and
+          service:slo_availability_error_ratio:rate6h > (1 * (1 - ${availability_target}))
+        for: 3h
+        labels:
+          severity: warning
+          slo: availability
+          window: "3d"
+        annotations:
+          summary: "{{ $labels.service }} is burning its availability error budget 1x faster than sustainable"
+          description: "Error ratio over 3d: {{ $value | humanizePercentage }}. At this pace the budget runs out before the end of the SLO window."
+          dashboard: "${grafana_url}/d/ruminapp-slo"
+      - alert: SLOLatencyBurnRateCritical
+        expr: |
+          service:slo_latency_error_ratio:rate1h > (14.4 * (1 - ${latency_target}))
+          and
+          service:slo_latency_error_ratio:rate5m > (14.4 * (1 - ${latency_target}))
+        for: 2m
+        labels:
+          severity: critical
+          slo: latency
+          window: "1h"
+        annotations:
+          summary: "{{ $labels.service }} is burning its latency error budget 14.4x faster than sustainable"
+          description: "Error ratio over 1h: {{ $value | humanizePercentage }}. At this pace the budget runs out before the end of the SLO window."
+          dashboard: "${grafana_url}/d/ruminapp-slo"
+      - alert: SLOLatencyBurnRateCritical
+        expr: |
+          service:slo_latency_error_ratio:rate6h > (6 * (1 - ${latency_target}))
+          and
+          service:slo_latency_error_ratio:rate30m > (6 * (1 - ${latency_target}))
+        for: 15m
+        labels:
+          severity: critical
+          slo: latency
+          window: "6h"
+        annotations:
+          summary: "{{ $labels.service }} is burning its latency error budget 6x faster than sustainable"
+          description: "Error ratio over 6h: {{ $value | humanizePercentage }}. At this pace the budget runs out before the end of the SLO window."
+          dashboard: "${grafana_url}/d/ruminapp-slo"
+      - alert: SLOLatencyBurnRateWarning
+        expr: |
+          service:slo_latency_error_ratio:rate1d > (3 * (1 - ${latency_target}))
+          and
+          service:slo_latency_error_ratio:rate2h > (3 * (1 - ${latency_target}))
+        for: 1h
+        labels:
+          severity: warning
+          slo: latency
+          window: "1d"
+        annotations:
+          summary: "{{ $labels.service }} is burning its latency error budget 3x faster than sustainable"
+          description: "Error ratio over 1d: {{ $value | humanizePercentage }}. At this pace the budget runs out before the end of the SLO window."
+          dashboard: "${grafana_url}/d/ruminapp-slo"
+      - alert: SLOLatencyBurnRateWarning
+        expr: |
+          service:slo_latency_error_ratio:rate3d > (1 * (1 - ${latency_target}))
+          and
+          service:slo_latency_error_ratio:rate6h > (1 * (1 - ${latency_target}))
+        for: 3h
+        labels:
+          severity: warning
+          slo: latency
+          window: "3d"
+        annotations:
+          summary: "{{ $labels.service }} is burning its latency error budget 1x faster than sustainable"
+          description: "Error ratio over 3d: {{ $value | humanizePercentage }}. At this pace the budget runs out before the end of the SLO window."
+          dashboard: "${grafana_url}/d/ruminapp-slo"

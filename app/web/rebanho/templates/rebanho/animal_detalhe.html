@@ -1,0 +1,132 @@
+{% extends "rebanho/base.html" %}
+{% block titulo %}{{ animal }}{% endblock %}
+{% block conteudo %}
+<div class="ficha-topo">
+  <span class="brinco grande {{ animal.classe_brinco }}">{{ animal.brinco }}</span>
+  <div>
+    <h1>{{ animal.nome|default:"Sem nome" }}</h1>
+    <p class="sub" style="margin:4px 0 8px">
+      {{ animal.get_raca_display }}{% if s.idade_meses is not None %}, {{ s.idade_meses }} meses{% endif %}{% if animal.lote %}, lote {{ animal.lote }}{% endif %}
+    </p>
+    <span class="etq cat">{{ s.categoria_label }}</span>
+    {% if s.categoria != 'BAIXA' and s.categoria != 'BEZERRA' %}<span class="etq {{ s.situacao }}">{{ s.situacao_label }}</span>{% endif %}
+  </div>
+  <div class="acoes"><a class="botao secundario" href="{% url 'animal_editar' animal.pk %}">Editar cadastro</a></div>
+</div>
+
+{% if s.alertas %}
+<div class="alertas" role="alert">{% for a in s.alertas %}<p>{{ a }}</p>{% endfor %}</div>
+{% endif %}
+
+<div class="colunas">
+  <div>
+    <section class="cartao">
+      <h2>Ficha reprodutiva</h2>
+      <dl class="dados">
+        {% if s.categoria != 'BEZERRA' %}<dt>{{ s.rotulo_dias }}</dt><dd>{{ s.dias_situacao|default_if_none:"—" }} dias{% if s.inicio_situacao %} (desde {{ s.inicio_situacao|date:"d/m/Y" }}){% endif %}</dd>{% endif %}
+        <dt>Partos</dt><dd>{{ s.n_partos }}</dd>
+        <dt>Último parto</dt><dd>{{ s.ultimo_parto|date:"d/m/Y"|default:"—" }}</dd>
+        {% if s.del_dias is not None %}<dt>Dias em lactação</dt><dd>{{ s.del_dias }}</dd>{% endif %}
+        {% if s.data_secagem_real %}<dt>Secou em</dt><dd>{{ s.data_secagem_real|date:"d/m/Y" }}</dd>{% endif %}
+        <dt>Último cio</dt><dd>{{ s.ultimo_cio|date:"d/m/Y"|default:"—" }}</dd>
+        <dt>Última inseminação</dt><dd>{% if s.ultima_ia %}{{ s.ultima_ia|date:"d/m/Y" }}{% if s.touro_ultima_ia %}, {{ s.touro_ultima_ia }}{% endif %}{% else %}—{% endif %}</dd>
+        <dt>IAs neste ciclo</dt><dd>{{ s.ias_no_ciclo }}</dd>
+        {% if animal.mae %}<dt>Mãe</dt><dd><a href="{% url 'animal_detalhe' animal.mae.pk %}">{{ animal.mae }}</a></dd>{% endif %}
+        {% if animal.pai %}<dt>Pai</dt><dd>{{ animal.pai }}</dd>{% endif %}
+      </dl>
+
+      {% if s.categoria != 'BAIXA' %}
+      <div class="proximos">
+        <h2>Próximas datas</h2>
+        <dl class="dados" style="margin-top:10px">
+        {% if s.situacao == 'VAZIA' %}
+          <dt>Liberada para IA</dt><dd>{% if s.apta_ia %}Sim{% if s.liberacao_ia %}, desde {{ s.liberacao_ia|date:"d/m/Y" }}{% endif %}{% elif s.liberacao_ia %}A partir de {{ s.liberacao_ia|date:"d/m/Y" }}{% else %}Não{% endif %}</dd>
+          <dt>Próximo cio previsto</dt><dd>{% if s.proximo_cio %}{{ s.proximo_cio|date:"d/m/Y" }}{% if s.cio_estimado %} (estimado; ciclos anteriores não foram observados){% endif %}{% else %}Registre um cio para prever o próximo{% endif %}</dd>
+        {% elif s.situacao == 'INSEMINADA' %}
+          <dt>Observar retorno ao cio</dt><dd>{{ s.retorno_inicio|date:"d/m" }} a {{ s.retorno_fim|date:"d/m/Y" }}</dd>
+          <dt>Diagnóstico de gestação</dt><dd>A partir de {{ s.data_diagnostico|date:"d/m/Y" }}</dd>
+        {% elif s.situacao == 'PRENHE' %}
+          <dt>Dias de gestação</dt><dd>{{ s.dias_gestacao|default_if_none:"—" }}</dd>
+          {% if s.categoria == 'LACTACAO' %}<dt>Secar em</dt><dd>{{ s.data_secar|date:"d/m/Y" }}</dd>{% endif %}
+          <dt>Pré-parto em</dt><dd>{{ s.data_pre_parto|date:"d/m/Y" }}</dd>
+          <dt>Parto previsto</dt><dd>{{ s.previsao_parto|date:"d/m/Y" }}</dd>
+        {% endif %}
+        </dl>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="cartao" style="margin-top:20px">
+      <h2>Peso</h2>
+      {% if animal.peso_atual %}
+        <dl class="dados">
+          <dt>Último peso</dt><dd>{{ animal.peso_atual.peso|floatformat:1 }} kg em {{ animal.peso_atual.data|date:"d/m/Y" }}</dd>
+          {% if animal.ganho_diario %}<dt>Ganho médio</dt><dd>{{ animal.ganho_diario|floatformat:2 }} kg por dia</dd>{% endif %}
+        </dl>
+        <div class="tabela-caixa" style="margin-top:12px"><table>
+          <thead><tr><th>Data</th><th class="num">Peso</th><th>Observações</th><th></th></tr></thead>
+          <tbody>
+          {% for pes in pesagens %}
+            <tr>
+              <td data-titulo="Data">{{ pes.data|date:"d/m/Y" }}</td>
+              <td data-titulo="Peso" class="num">{{ pes.peso|floatformat:1 }} kg</td>
+              <td data-titulo="Observações">{{ pes.observacoes }}</td>
+              <td><form method="post" action="{% url 'pesagem_excluir' pes.pk %}" onsubmit="return confirm('Excluir esta pesagem?')">{% csrf_token %}<button class="link-excluir" type="submit">Excluir</button></form></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+      {% else %}
+        <p class="vazio" style="padding:0 0 12px">Nenhuma pesagem registrada.</p>
+      {% endif %}
+
+      {% if animal.ativo %}
+      <form method="post" action="{% url 'pesagem_nova' %}" class="rapido" style="margin-top:14px">{% csrf_token %}
+        {% with form=form_peso %}{% include "rebanho/_campos.html" %}{% endwith %}
+        <div class="inteiro"><button class="botao secundario" type="submit">Registrar peso</button></div>
+      </form>
+      {% endif %}
+    </section>
+
+    {% if animal.ativo %}
+    <section class="cartao" style="margin-top:20px">
+      <h2>Registrar evento</h2>
+      <form method="post" action="{% url 'evento_novo' %}" class="rapido" data-evento>{% csrf_token %}
+        {% include "rebanho/_campos.html" %}
+        <input type="hidden" name="proximo" value="animal">
+        <div class="inteiro"><button class="botao" type="submit">Registrar evento</button></div>
+      </form>
+    </section>
+    {% endif %}
+  </div>
+
+  <section>
+    <h2 style="margin-bottom:12px">Histórico</h2>
+    <div class="tabela-caixa"><table>
+      <thead><tr><th>Data</th><th>Evento</th><th>Detalhes</th><th></th></tr></thead>
+      <tbody>
+      {% for e in eventos %}
+        <tr>
+          <td data-titulo="Data">{{ e.data|date:"d/m/Y" }}</td>
+          <td data-titulo="Evento">{% if e.tipo == 'DG' %}Diagnóstico <span class="etq {% if e.resultado == 'POS' %}PRENHE{% else %}VAZIA{% endif %}">{{ e.get_resultado_display }}</span>{% else %}{{ e.get_tipo_display }}{% endif %}</td>
+          <td data-titulo="Detalhes">{% if e.tipo == 'IA' %}{{ e.touro|default:"touro não informado" }}{% if e.inseminador %}, por {{ e.inseminador }}{% endif %}{% endif %} {{ e.observacoes }}</td>
+          <td>
+            <form method="post" action="{% url 'evento_excluir' e.pk %}" onsubmit="return confirm('Excluir este evento? As previsões serão recalculadas.')">{% csrf_token %}
+              <button class="link-excluir" type="submit">Excluir</button>
+            </form>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="vazio">Nenhum evento ainda. Comece pelo último parto desta vaca.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+
+    {% if filhas %}
+    <h2 style="margin:24px 0 12px">Filhas</h2>
+    <p>{% for f in filhas %}<a class="brinco {{ f.classe_brinco }}" href="{% url 'animal_detalhe' f.pk %}">{{ f.brinco }}</a> {% endfor %}</p>
+    {% endif %}
+    {% if animal.observacoes %}<h2 style="margin:24px 0 8px">Observações</h2><p>{{ animal.observacoes|linebreaksbr }}</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

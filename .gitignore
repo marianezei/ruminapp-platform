@@ -1,0 +1,14 @@
+.data/
+.terraform/
+.terraform-validate/
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+crash.log
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.sqlite3
+app/web/staticfiles/
+.DS_Store

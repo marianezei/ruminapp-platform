@@ -1,0 +1,265 @@
+fullnameOverride: kps
+
+crds:
+  enabled: true
+
+# On kind these components only listen on the node's localhost and cannot be
+# scraped; leaving them on would keep false alerts firing forever.
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+defaultRules:
+  # kind nodes do not run NTP, so these fire permanently.
+  disabled:
+    NodeClockNotSynchronising: true
+    NodeClockSkewDetected: true
+  rules:
+    etcd: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+    kubeControllerManager: false
+    kubeProxy: false
+
+prometheus:
+  ingress:
+    enabled: true
+    ingressClassName: ${ingress_class}
+    hosts: [prometheus.${domain}]
+    paths: [/]
+  prometheusSpec:
+    replicas: 1
+    externalUrl: http://prometheus.${domain}${port_suffix}
+    retention: ${retention}
+    retentionSize: ${retention_size}
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    enableRemoteWriteReceiver: true
+    enableFeatures:
+      - exemplar-storage
+    exemplars:
+      maxSize: 100000
+    externalLabels:
+      cluster: ${cluster_name}
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    priorityClassName: ${priority_class}
+    resources:
+      requests: {cpu: 200m, memory: 768Mi}
+      limits: {memory: 2Gi}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ${storage_class}
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: ${prometheus_storage}
+    additionalScrapeConfigs:
+      - job_name: kubernetes-pods
+        honor_labels: false
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_phase]
+            action: drop
+            regex: Pending|Succeeded|Failed
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            regex: (.+);(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            target_label: service
+          - source_labels: [namespace, service]
+            separator: /
+            target_label: job
+
+alertmanager:
+  ingress:
+    enabled: true
+    ingressClassName: ${ingress_class}
+    hosts: [alertmanager.${domain}]
+    paths: [/]
+  podDisruptionBudget:
+    enabled: ${alertmanager_replicas > 1}
+    minAvailable: 1
+  alertmanagerSpec:
+    replicas: ${alertmanager_replicas}
+    retention: 120h
+    priorityClassName: ${priority_class}
+    externalUrl: http://alertmanager.${domain}${port_suffix}
+%{ if slack_enabled ~}
+    secrets: [${slack_secret}]
+%{ endif ~}
+    resources:
+      requests: {cpu: 20m, memory: 48Mi}
+      limits: {memory: 128Mi}
+  config:
+    global:
+      resolve_timeout: 5m
+      smtp_smarthost: ${smtp_host}
+      smtp_from: alertmanager@${domain}
+      smtp_require_tls: false
+    route:
+      receiver: email
+      group_by: [alertname, namespace, service]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - receiver: "null"
+          matchers: ['alertname=~"Watchdog|InfoInhibitor"']
+        - receiver: critical
+          matchers: ['severity="critical"']
+          continue: false
+    inhibit_rules:
+      - source_matchers: ['severity="critical"']
+        target_matchers: ['severity="warning"']
+        equal: [alertname, namespace, service]
+    receivers:
+      - name: "null"
+      - name: email
+        email_configs:
+          - to: ${alert_email}
+            send_resolved: true
+      - name: critical
+        email_configs:
+          - to: ${alert_email}
+            send_resolved: true
+%{ if slack_enabled ~}
+        slack_configs:
+          - api_url_file: /etc/alertmanager/secrets/${slack_secret}/webhook-url
+            channel: "${slack_channel}"
+            send_resolved: true
+            title: '{{ .CommonLabels.alertname }} ({{ .Status }})'
+            text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ "\n" }}{{ end }}'
+%{ endif ~}
+
+grafana:
+  admin:
+    existingSecret: ${grafana_secret}
+    userKey: admin-user
+    passwordKey: admin-password
+  ingress:
+    enabled: true
+    ingressClassName: ${ingress_class}
+    hosts: [grafana.${domain}]
+    path: /
+  priorityClassName: ${priority_class}
+  resources:
+    requests: {cpu: 50m, memory: 192Mi}
+    limits: {memory: 512Mi}
+  grafana.ini:
+    server:
+      root_url: http://grafana.${domain}${port_suffix}
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    users:
+      default_theme: system
+    feature_toggles:
+      enable: traceqlEditor
+  defaultDashboardsTimezone: browser
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+      folderAnnotation: grafana_folder
+      annotations:
+        grafana_folder: Kubernetes
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      exemplarTraceIdDestinations:
+        datasourceUid: tempo
+        traceIdLabelName: trace_id
+        urlDisplayLabel: View trace
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      access: proxy
+      url: ${loki_url}
+      jsonData:
+        maxLines: 1000
+        derivedFields:
+          - name: TraceID
+            matcherType: label
+            matcherRegex: trace_id
+            url: "$${__value.raw}"
+            datasourceUid: tempo
+            urlDisplayLabel: View trace
+    - name: Tempo
+      uid: tempo
+      type: tempo
+      access: proxy
+      url: ${tempo_url}
+      jsonData:
+        nodeGraph:
+          enabled: true
+        serviceMap:
+          datasourceUid: prometheus
+        lokiSearch:
+          datasourceUid: loki
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: -5m
+          spanEndTimeShift: 5m
+          filterByTraceID: true
+          tags:
+            - key: k8s.namespace.name
+              value: namespace
+            - key: service.name
+              value: app
+        tracesToMetrics:
+          datasourceUid: prometheus
+          spanStartTimeShift: -5m
+          spanEndTimeShift: 5m
+          tags:
+            - key: service.name
+              value: service
+          queries:
+            - name: p95 latency
+              query: histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{$__tags}[5m])))
+            - name: Error rate
+              query: sum(rate(traces_spanmetrics_calls_total{$__tags,status_code="STATUS_CODE_ERROR"}[5m]))
+        search:
+          hide: false
+        traceQuery:
+          timeShiftEnabled: true
+          spanStartTimeShift: -1h
+          spanEndTimeShift: 1h
+
+kube-state-metrics:
+  resources:
+    requests: {cpu: 10m, memory: 48Mi}
+    limits: {memory: 128Mi}
+
+prometheus-node-exporter:
+  resources:
+    requests: {cpu: 10m, memory: 24Mi}
+    limits: {memory: 64Mi}
+
+prometheusOperator:
+  resources:
+    requests: {cpu: 20m, memory: 64Mi}
+    limits: {memory: 192Mi}

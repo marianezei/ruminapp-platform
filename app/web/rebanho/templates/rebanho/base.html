@@ -1,0 +1,53 @@
+{% load static %}<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}RuminApp{% endblock %} · Controle leiteiro</title>
+  <link rel="stylesheet" href="{% static 'rebanho/estilo.css' %}">
+  <style id="tema">{{ tema_css }}</style>
+</head>
+<body>
+{% if user.is_authenticated %}
+<header class="topo">
+  <div class="topo-dentro">
+    <a class="marca" href="{% url 'painel' %}"><span class="emoji" aria-hidden="true">🐄</span> RuminApp</a>
+    {% with n=request.resolver_match.url_name %}
+    <nav>
+      <a href="{% url 'painel' %}" class="{% if n == 'painel' %}ativo{% endif %}">Painel do dia</a>
+      <a href="{% url 'animal_lista' %}" class="{% if n == 'animal_lista' or n == 'animal_detalhe' %}ativo{% endif %}">Animais</a>
+      <a href="{% url 'evento_novo' %}" class="{% if n == 'evento_novo' %}ativo{% endif %}">Registrar evento</a>
+      <a href="{% url 'configuracao' %}" class="{% if n == 'configuracao' %}ativo{% endif %}">Parâmetros</a>
+      <a href="{% url 'aparencia' %}" class="{% if n == 'aparencia' %}ativo{% endif %}">Aparência</a>
+      <a href="{% url 'admin:index' %}">Administração</a>
+    </nav>
+    {% endwith %}
+    <form class="usuario" method="post" action="{% url 'logout' %}">{% csrf_token %}
+      {{ user.username }} · <button type="submit">Sair</button>
+    </form>
+  </div>
+</header>
+{% endif %}
+<main class="{% block classe_main %}{% endblock %}">
+  {% if messages %}
+  <ul class="mensagens">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% block conteudo %}{% endblock %}
+</main>
+<script>
+// Mostra só os campos que fazem sentido para o tipo de evento escolhido
+document.querySelectorAll('form[data-evento]').forEach(function (form) {
+  var tipo = form.querySelector('[name=tipo]');
+  if (!tipo) return;
+  function atualizar() {
+    form.querySelectorAll('[data-so-para]').forEach(function (el) {
+      el.hidden = el.dataset.soPara.split(' ').indexOf(tipo.value) === -1;
+    });
+  }
+  tipo.addEventListener('change', atualizar);
+  atualizar();
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
